@@ -180,15 +180,15 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-6xl mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-violet-100 via-pink-100 to-blue-100">
+      <div className="max-w-7xl mx-auto p-6">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-violet-600 to-pink-600 bg-clip-text text-transparent">Dashboard</h1>
           <div className="flex items-center space-x-4">
-            <span className="text-gray-600">Welcome, {user.name}</span>
+            <span className="text-gray-700 font-semibold">Welcome, {user.name}</span>
             <button
               onClick={handleLogout}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-5 py-2.5 rounded-xl font-bold hover:from-red-600 hover:to-pink-600 transition-all shadow-lg hover:shadow-xl"
             >
               Logout
             </button>
@@ -196,65 +196,70 @@ export default function DashboardPage() {
         </div>
 
         {(error || success) && (
-          <div className="mb-6 p-4 rounded-lg shadow-sm">
+          <div className="mb-6 p-4 rounded-2xl shadow-lg">
             {error && (
-              <div className="text-red-700 bg-red-100 border border-red-400 px-4 py-3 rounded mb-2">
+              <div className="text-red-700 bg-gradient-to-r from-red-50 to-pink-50 border border-red-300 px-5 py-4 rounded-xl font-medium">
                 {error}
               </div>
             )}
             {success && (
-              <div className="text-green-700 bg-green-100 border border-green-400 px-4 py-3 rounded">
+              <div className="text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 px-5 py-4 rounded-xl font-medium">
                 {success}
               </div>
             )}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* User Profile Card */}
-          <div className="bg-white rounded-lg shadow-md p-6 lg:col-span-1">
-            <h2 className="text-xl font-semibold mb-4">Your Profile</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <p className="text-gray-900">{user.name}</p>
+          <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl p-8 lg:col-span-1 border border-white/20">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+              <svg className="w-6 h-6 mr-2 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Your Profile
+            </h2>
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-violet-50 to-pink-50 rounded-xl p-4">
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide">Name</label>
+                <p className="text-gray-900 font-semibold">{user.name}</p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <p className="text-gray-900">{user.email}</p>
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4">
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide">Email</label>
+                <p className="text-gray-900 font-semibold">{user.email}</p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Role</label>
-                <p className="text-gray-900">{user.role}</p>
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-4">
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide">Role</label>
+                <p className="text-gray-900 font-semibold capitalize">{user.role}</p>
               </div>
             </div>
             
             {isEditing && editingUserId === user.id ? (
-              <form onSubmit={handleUpdate} className="mt-4 space-y-3">
+              <form onSubmit={handleUpdate} className="mt-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Name</label>
                   <input
                     type="text"
                     value={editForm.name}
                     onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Email</label>
                   <input
                     type="email"
                     value={editForm.email}
                     onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                     required
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <button
                     type="submit"
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex-1 bg-gradient-to-r from-violet-600 to-pink-600 text-white py-3 px-4 rounded-xl font-bold hover:from-violet-700 hover:to-pink-700 transition-all shadow-lg"
                   >
                     Update
                   </button>
@@ -265,7 +270,7 @@ export default function DashboardPage() {
                       setEditingUserId(null);
                       setEditForm({ name: '', email: '' });
                     }}
-                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                    className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-xl font-bold hover:bg-gray-300 transition-all"
                   >
                     Cancel
                   </button>
@@ -274,7 +279,7 @@ export default function DashboardPage() {
             ) : (
               <button
                 onClick={() => handleEdit(user)}
-                className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                className="mt-6 w-full bg-gradient-to-r from-violet-600 to-pink-600 text-white py-3 px-4 rounded-xl font-bold hover:from-violet-700 hover:to-pink-700 transition-all shadow-lg"
               >
                 Edit Profile
               </button>
@@ -282,46 +287,51 @@ export default function DashboardPage() {
             
             <button
               onClick={() => handleDelete(user.id)}
-              className="mt-3 w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+              className="mt-4 w-full bg-gradient-to-r from-red-500 to-pink-500 text-white py-3 px-4 rounded-xl font-bold hover:from-red-600 hover:to-pink-600 transition-all shadow-lg"
             >
               Delete Account
             </button>
           </div>
 
           {/* User List Card */}
-          <div className="bg-white rounded-lg shadow-md p-6 lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">All Users</h2>
+          <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl p-8 lg:col-span-2 border border-white/20">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+              <svg className="w-6 h-6 mr-2 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              All Users
+            </h2>
             
             {users.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-12 text-gray-500 font-medium">
                 No users found.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gradient-to-r from-violet-50 to-pink-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Role</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-100">
                     {users.map((u) => (
-                      <tr key={u.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.email}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <tr key={u.id} className="hover:bg-gradient-to-r hover:from-violet-50 hover:to-pink-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{u.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{u.email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
                           {u.role}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           {u.id === user.id ? (
-                            <span className="text-gray-400">(You)</span>
+                            <span className="text-gray-400 italic">(You)</span>
                           ) : (
                             <button
                               onClick={() => handleEdit(u)}
-                              className="text-blue-600 hover:text-blue-900 mr-3"
+                              className="text-violet-600 hover:text-pink-600 font-bold mr-4 transition-colors"
                             >
                               Edit
                             </button>
@@ -329,7 +339,7 @@ export default function DashboardPage() {
                           {u.id !== user.id && (
                             <button
                               onClick={() => handleDelete(u.id)}
-                              className="text-red-600 hover:text-red-900"
+                              className="text-red-600 hover:text-red-800 font-bold transition-colors"
                             >
                               Delete
                             </button>
@@ -346,34 +356,34 @@ export default function DashboardPage() {
 
         {/* Edit Form Modal (for editing other users) */}
         {isEditing && editingUserId !== user.id && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h3 className="text-xl font-bold mb-4">Edit User</h3>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl border border-white/20">
+              <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-violet-600 to-pink-600 bg-clip-text text-transparent">Edit User</h3>
               <form onSubmit={handleUpdate}>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <div className="mb-5">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Name</label>
                   <input
                     type="text"
                     value={editForm.name}
                     onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                     required
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <div className="mb-6">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Email</label>
                   <input
                     type="email"
                     value={editForm.email}
                     onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                     required
                   />
                 </div>
                 <div className="flex gap-3">
                   <button
                     type="submit"
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex-1 bg-gradient-to-r from-violet-600 to-pink-600 text-white py-3 px-4 rounded-xl font-bold hover:from-violet-700 hover:to-pink-700 transition-all shadow-lg"
                   >
                     Update User
                   </button>
@@ -384,7 +394,7 @@ export default function DashboardPage() {
                       setEditingUserId(null);
                       setEditForm({ name: '', email: '' });
                     }}
-                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                    className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-xl font-bold hover:bg-gray-300 transition-all"
                   >
                     Cancel
                   </button>
