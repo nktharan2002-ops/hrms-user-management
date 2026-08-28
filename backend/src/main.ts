@@ -14,6 +14,7 @@ async function bootstrap() {
         'http://localhost:3000',
         'http://localhost:3001',
         'http://localhost:3002',
+        'https://hrms-user-management.vercel.app',
       ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
