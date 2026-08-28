@@ -1,9 +1,10 @@
-import { Injectable, Inject, forwardRef, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, UnauthorizedException, ForbiddenException, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Document } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import { CreateUserDto } from './dto/user.dto';
 import { UpdateUserDto } from './dto/user.dto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
@@ -17,19 +18,16 @@ export class UsersService {
     
     const existingUser = await this.userModel.findOne({ email }).exec();
     if (existingUser) {
-      const error = new Error('Email already exists');
-      (error as any).response = {
-        statusCode: 409,
-        message: 'Email already exists',
-        error: 'Conflict',
-      };
-      throw error;
+      throw new ConflictException('Email already exists');
     }
+
+    // Hash password before saving
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
     const user = new this.userModel({
       ...createUserDto,
       email,
-      password: createUserDto.password,
+      password: hashedPassword,
     });
 
     const savedUser = await user.save();
@@ -54,13 +52,7 @@ export class UsersService {
   async findOne(id: string): Promise<any> {
     const user = await this.userModel.findById(id).exec();
     if (!user) {
-      const error = new Error('User not found');
-      (error as any).response = {
-        statusCode: 404,
-        message: 'User not found',
-        error: 'Not Found',
-      };
-      throw error;
+      throw new NotFoundException('User not found');
     }
     const userObject = user.toObject() as any;
     if (userObject.hasOwnProperty('password')) {
@@ -76,26 +68,14 @@ export class UsersService {
 
     const user = await this.userModel.findById(id).exec();
     if (!user) {
-      const error = new Error('User not found');
-      (error as any).response = {
-        statusCode: 404,
-        message: 'User not found',
-        error: 'Not Found',
-      };
-      throw error;
+      throw new NotFoundException('User not found');
     }
 
     const email = updateUserDto.email ? updateUserDto.email.toLowerCase() : user.email;
     
     const existingUser = await this.userModel.findOne({ email, _id: { $ne: id } }).exec();
     if (existingUser) {
-      const error = new Error('Email already exists');
-      (error as any).response = {
-        statusCode: 409,
-        message: 'Email already exists',
-        error: 'Conflict',
-      };
-      throw error;
+      throw new ConflictException('Email already exists');
     }
 
     const updateData: any = { ...updateUserDto };
@@ -103,18 +83,17 @@ export class UsersService {
       updateData.email = email;
     }
 
+    // Hash password if provided
+    if (updateUserDto.password) {
+      updateData.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
+
     const updatedUser = await this.userModel
       .findByIdAndUpdate(id, updateData, { new: true, runValidators: true })
       .exec();
       
     if (!updatedUser) {
-      const error = new Error('User not found');
-      (error as any).response = {
-        statusCode: 404,
-        message: 'User not found',
-        error: 'Not Found',
-      };
-      throw error;
+      throw new NotFoundException('User not found');
     }
     
     const userObject = updatedUser.toObject() as any;
@@ -131,13 +110,7 @@ export class UsersService {
 
     const user = await this.userModel.findById(id).exec();
     if (!user) {
-      const error = new Error('User not found');
-      (error as any).response = {
-        statusCode: 404,
-        message: 'User not found',
-        error: 'Not Found',
-      };
-      throw error;
+      throw new NotFoundException('User not found');
     }
 
     await this.userModel.findByIdAndDelete(id).exec();
