@@ -1,9 +1,11 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,9 +38,8 @@ export default function LoginPage() {
         throw new Error(data.message || "Login failed");
       }
 
-      // Store token and user directly in localStorage
-      localStorage.setItem('hrms_token', data.accessToken);
-      localStorage.setItem('hrms_user', JSON.stringify(data.user));
+      // Use AuthContext login function
+      login(data.accessToken, data.user);
       
       router.push('/dashboard');
     } catch (err) {
