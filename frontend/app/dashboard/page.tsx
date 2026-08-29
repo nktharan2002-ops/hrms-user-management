@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../src/contexts/AuthContext';
 
 interface User {
   id: string;
@@ -11,7 +10,8 @@ interface User {
 }
 
 export default function DashboardPage() {
-  const { user, loading, isAuthenticated, logout } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -22,19 +22,34 @@ export default function DashboardPage() {
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-  // Redirect to login if not authenticated (after loading is complete)
+  // Check authentication on mount
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    const token = localStorage.getItem('hrms_token');
+    const storedUser = localStorage.getItem('hrms_user');
+    
+    if (!token || !storedUser) {
       router.push('/login');
+      return;
     }
-  }, [loading, isAuthenticated, router]);
+
+    try {
+      setUser(JSON.parse(storedUser));
+    } catch (e) {
+      localStorage.removeItem('hrms_token');
+      localStorage.removeItem('hrms_user');
+      router.push('/login');
+      return;
+    }
+    
+    setLoading(false);
+  }, [router]);
 
   // Fetch users when authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!loading && user) {
       fetchUsers();
     }
-  }, [isAuthenticated]);
+  }, [loading, user]);
 
   const fetchUsers = async () => {
     try {
@@ -49,7 +64,9 @@ export default function DashboardPage() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          logout();
+          localStorage.removeItem('hrms_token');
+          localStorage.removeItem('hrms_user');
+          router.push('/login');
           return;
         }
         throw new Error('Failed to fetch users');
@@ -71,7 +88,9 @@ export default function DashboardPage() {
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
-      logout();
+      localStorage.removeItem('hrms_token');
+      localStorage.removeItem('hrms_user');
+      router.push('/login');
     }
   };
 
@@ -134,8 +153,10 @@ export default function DashboardPage() {
       }
 
       if (userId === user?.id) {
-        logout();
+        localStorage.removeItem('hrms_token');
+        localStorage.removeItem('hrms_user');
         setSuccess('Account deleted successfully. You have been logged out.');
+        router.push('/login');
       } else {
         setUsers(users.filter(u => u.id !== userId));
         setSuccess('User deleted successfully');
