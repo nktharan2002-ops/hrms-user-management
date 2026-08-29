@@ -5,7 +5,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        credentials: "include", // Send cookies to backend
         body: JSON.stringify({
           email,
           password,
@@ -38,8 +38,8 @@ export default function LoginPage() {
         throw new Error(data.message || "Login failed");
       }
 
-      // Use AuthContext login function
-      login(data.accessToken, data.user);
+      // Cookie is set by backend, just refresh user state from /auth/me
+      await refreshUser();
       
       router.push('/dashboard');
     } catch (err) {

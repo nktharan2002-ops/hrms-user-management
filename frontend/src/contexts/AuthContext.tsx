@@ -10,60 +10,64 @@ interface User {
 }
 
 interface AuthContextType {
-  user: User | null;
-  token: string | null;
+  user: User | null | undefined; // undefined = loading, null = not logged in
   loading: boolean;
-  login: (token: string, user: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null | undefined>(undefined); // Start as undefined (loading)
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Only run on client side
-    if (typeof window !== 'undefined') {
-      const storedToken = localStorage.getItem('hrms_token');
-      const storedUser = localStorage.getItem('hrms_user');
-      
-      if (storedToken && storedUser) {
-        try {
-          setToken(storedToken);
-          setUser(JSON.parse(storedUser));
-        } catch (e) {
-          console.error('Failed to parse user data', e);
-          localStorage.removeItem('hrms_token');
-          localStorage.removeItem('hrms_user');
-        }
-      }
-    }
-    setLoading(false);
-  }, []);
+  const refreshUser = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: 'GET',
+        credentials: 'include', // Send cookies
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-  const login = (newToken: string, newUser: User) => {
-    setToken(newToken);
-    setUser(newUser);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('hrms_token', newToken);
-      localStorage.setItem('hrms_user', JSON.stringify(newUser));
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user || data);
+      } else {
+        // 401 or error means not authenticated
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('hrms_token');
-      localStorage.removeItem('hrms_user');
+  useEffect(() => {
+    refreshUser();
+  }, []);
+
+  const logout = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setUser(null);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
