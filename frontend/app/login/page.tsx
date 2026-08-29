@@ -1,19 +1,17 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    (process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000'
-      : '');
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,18 +38,8 @@ export default function LoginPage() {
         throw new Error(data.message || "Login failed");
       }
 
-      // Set token in BOTH cookie and localStorage for redundancy
-      // Cookie for API requests, localStorage for client-side auth checks
-      const expires = new Date();
-      expires.setTime(expires.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-      
-      // For production (HTTPS): must use Secure; SameSite=None for cross-origin
-      const isProduction = window.location.protocol === 'https:';
-      const cookieOptions = `expires=${expires.toUTCString()};path=/;SameSite=${isProduction ? 'None' : 'Lax'}${isProduction ? ';Secure' : ''}`;
-      
-      document.cookie = `token=${data.accessToken};${cookieOptions}`;
-      localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('token', data.accessToken); // Also store in localStorage as backup
+      // Use AuthContext login function to store token and user
+      login(data.accessToken, data.user);
       
       router.push('/dashboard');
     } catch (err) {
@@ -61,12 +49,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const setCookie = (name: string, value: string, days: number) => {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
   };
 
   return (

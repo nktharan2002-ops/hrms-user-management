@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 interface User {
   id: string;
@@ -9,44 +11,45 @@ interface User {
 }
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading, isAuthenticated, logout } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', email: '' });
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const router = useRouter();
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
+  // Redirect to login if not authenticated (after loading is complete)
   useEffect(() => {
-    // Get user from localStorage
-    const storedUser = localStorage.getItem('user');
-    const storedToken = localStorage.getItem('token');
-    
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
-    } else if (!storedToken) {
-      // No token found, redirect to login immediately
-      window.location.href = '/login';
-      return;
+    if (!loading && !isAuthenticated) {
+      router.push('/login');
     }
+  }, [loading, isAuthenticated, router]);
 
-    fetchUsers();
-  }, []);
+  // Fetch users when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUsers();
+    }
+  }, [isAuthenticated]);
 
   const fetchUsers = async () => {
     try {
+      const token = localStorage.getItem('hrms_token');
       const response = await fetch(`${API_BASE_URL}/users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Unauthorized, redirect to login
-          localStorage.removeItem('user');
-          window.location.href = '/login';
+          logout();
           return;
         }
         throw new Error('Failed to fetch users');
@@ -56,39 +59,23 @@ export default function DashboardPage() {
       setUsers(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch users');
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleLogout = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
-
-      if (response.ok) {
-        // Clear localStorage and cookies
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        document.cookie = 'token=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;SameSite=Lax';
-        setUser(null);
-        setSuccess('Logged out successfully');
-        
-        // Redirect to login after 1 second
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 1000);
-      }
     } catch (err) {
-      setError('Logout failed');
+      console.error('Logout error:', err);
+    } finally {
+      logout();
     }
   };
 
   const handleEdit = (userData: User) => {
-    // This is used for both editing the logged-in user's profile and other users
-    // Store the specific user ID we're editing
     setEditingUserId(userData.id);
     setEditForm({ name: userData.name, email: userData.email });
     setIsEditing(true);
@@ -99,9 +86,13 @@ export default function DashboardPage() {
     if (!editingUserId) return;
 
     try {
+      const token = localStorage.getItem('hrms_token');
       const response = await fetch(`${API_BASE_URL}/users/${editingUserId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify(editForm),
         credentials: 'include',
       });
@@ -113,15 +104,7 @@ export default function DashboardPage() {
 
       const updatedUser = await response.json();
       
-      // Update users list
       setUsers(users.map(u => u.id === editingUserId ? updatedUser : u));
-      
-      // If it's the logged-in user, update localStorage too
-      if (user?.id === editingUserId) {
-        const updatedStoredUser = { ...user, name: updatedUser.name, email: updatedUser.email };
-        localStorage.setItem('user', JSON.stringify(updatedStoredUser));
-        setUser(updatedStoredUser);
-      }
       
       setSuccess('User updated successfully');
       setIsEditing(false);
@@ -136,8 +119,12 @@ export default function DashboardPage() {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
+      const token = localStorage.getItem('hrms_token');
       const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         credentials: 'include',
       });
 
@@ -146,17 +133,10 @@ export default function DashboardPage() {
         throw new Error(errorData.message || 'Delete failed');
       }
 
-      // If deleting own account, logout
       if (userId === user?.id) {
-        localStorage.removeItem('user');
-        setUser(null);
+        logout();
         setSuccess('Account deleted successfully. You have been logged out.');
-        // Redirect to login after 1 second
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 1000);
       } else {
-        // Otherwise just remove from list
         setUsers(users.filter(u => u.id !== userId));
         setSuccess('User deleted successfully');
       }
@@ -167,24 +147,17 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-violet-100 via-pink-100 to-blue-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">Loading dashboard...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+          <p className="mt-2 text-gray-600 font-semibold">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Please login to access dashboard</h1>
-          <a href="/login" className="text-blue-600 hover:text-blue-800">Login here</a>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
