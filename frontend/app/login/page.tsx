@@ -40,8 +40,18 @@ export default function LoginPage() {
         throw new Error(data.message || "Login failed");
       }
 
-      setCookie('token', data.accessToken, 1);
+      // Set token in BOTH cookie and localStorage for redundancy
+      // Cookie for API requests, localStorage for client-side auth checks
+      const expires = new Date();
+      expires.setTime(expires.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      
+      // For production (HTTPS): must use Secure; SameSite=None for cross-origin
+      const isProduction = window.location.protocol === 'https:';
+      const cookieOptions = `expires=${expires.toUTCString()};path=/;SameSite=${isProduction ? 'None' : 'Lax'}${isProduction ? ';Secure' : ''}`;
+      
+      document.cookie = `token=${data.accessToken};${cookieOptions}`;
       localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('token', data.accessToken); // Also store in localStorage as backup
       
       router.push('/dashboard');
     } catch (err) {

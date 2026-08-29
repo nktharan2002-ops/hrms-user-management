@@ -23,8 +23,14 @@ export default function DashboardPage() {
   useEffect(() => {
     // Get user from localStorage
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    const storedToken = localStorage.getItem('token');
+    
+    if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
+    } else if (!storedToken) {
+      // No token found, redirect to login immediately
+      window.location.href = '/login';
+      return;
     }
 
     fetchUsers();
@@ -63,8 +69,10 @@ export default function DashboardPage() {
       });
 
       if (response.ok) {
-        // Clear localStorage
+        // Clear localStorage and cookies
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        document.cookie = 'token=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;SameSite=Lax';
         setUser(null);
         setSuccess('Logged out successfully');
         
