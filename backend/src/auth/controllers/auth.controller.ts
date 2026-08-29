@@ -66,14 +66,13 @@ export class AuthController {
     const { user, accessToken } =
       await this.authService.login(loginDto);
 
-    const isProduction =
-      this.configService.get<string>('NODE_ENV') === 'production';
-
+    // Force secure, cross-site cookies for Vercel -> Render deployment
     const cookieOptions: any = {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000,
+      secure: true, // Required for HTTPS (Vercel/Render)
+      sameSite: 'none', // Required for cross-site requests (Vercel -> Render)
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/',
     };
 
     res.cookie('token', accessToken, cookieOptions);
@@ -96,13 +95,12 @@ export class AuthController {
     @Request() req: any,
     @Response() res: any,
   ) {
-    const isProduction =
-      this.configService.get<string>('NODE_ENV') === 'production';
-
+    // Force secure, cross-site cookies for Vercel -> Render deployment
     res.clearCookie('token', {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
+      secure: true,
+      sameSite: 'none',
+      path: '/',
     });
 
     return res.json({
