@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 interface User {
   id: string;
@@ -10,8 +11,7 @@ interface User {
 }
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading, logout } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -19,30 +19,15 @@ export default function DashboardPage() {
   const [editForm, setEditForm] = useState({ name: '', email: '' });
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const router = useRouter();
-
+  
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-  // Check authentication on mount
+  // Redirect to login if not authenticated (after loading completes)
   useEffect(() => {
-    const token = localStorage.getItem('hrms_token');
-    const storedUser = localStorage.getItem('hrms_user');
-    
-    if (!token || !storedUser) {
-      router.push('/login');
-      return;
+    if (!loading && !user) {
+      router.replace('/login');
     }
-
-    try {
-      setUser(JSON.parse(storedUser));
-    } catch (e) {
-      localStorage.removeItem('hrms_token');
-      localStorage.removeItem('hrms_user');
-      router.push('/login');
-      return;
-    }
-    
-    setLoading(false);
-  }, [router]);
+  }, [loading, user, router]);
 
   // Fetch users when authenticated
   useEffect(() => {
@@ -53,10 +38,8 @@ export default function DashboardPage() {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('hrms_token');
       const response = await fetch(`${API_BASE_URL}/users`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         credentials: 'include',
@@ -64,9 +47,7 @@ export default function DashboardPage() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          localStorage.removeItem('hrms_token');
-          localStorage.removeItem('hrms_user');
-          router.push('/login');
+          setError('Session expired. Please log in again.');
           return;
         }
         throw new Error('Failed to fetch users');
@@ -80,18 +61,8 @@ export default function DashboardPage() {
   };
 
   const handleLogout = async () => {
-    try {
-      await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-    } catch (err) {
-      console.error('Logout error:', err);
-    } finally {
-      localStorage.removeItem('hrms_token');
-      localStorage.removeItem('hrms_user');
-      router.push('/login');
-    }
+    await logout();
+    router.push('/login');
   };
 
   const handleEdit = (userData: User) => {
@@ -105,12 +76,10 @@ export default function DashboardPage() {
     if (!editingUserId) return;
 
     try {
-      const token = localStorage.getItem('hrms_token');
       const response = await fetch(`${API_BASE_URL}/users/${editingUserId}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(editForm),
         credentials: 'include',
@@ -138,11 +107,10 @@ export default function DashboardPage() {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
-      const token = localStorage.getItem('hrms_token');
       const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
         credentials: 'include',
       });
@@ -153,10 +121,11 @@ export default function DashboardPage() {
       }
 
       if (userId === user?.id) {
-        localStorage.removeItem('hrms_token');
-        localStorage.removeItem('hrms_user');
         setSuccess('Account deleted successfully. You have been logged out.');
-        router.push('/login');
+        setTimeout(() => {
+          logout();
+          router.push('/login');
+        }, 2000);
       } else {
         setUsers(users.filter(u => u.id !== userId));
         setSuccess('User deleted successfully');
@@ -242,7 +211,7 @@ export default function DashboardPage() {
                   <label className="block text-sm font-bold text-gray-700 mb-2">Name</label>
                   <input
                     type="text"
-                    value={editForm.name}
+                    value={editForm.name || ''}
                     onChange={(e) => setEditForm({...editForm, name: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                     required
@@ -252,7 +221,7 @@ export default function DashboardPage() {
                   <label className="block text-sm font-bold text-gray-700 mb-2">Email</label>
                   <input
                     type="email"
-                    value={editForm.email}
+                    value={editForm.email || ''}
                     onChange={(e) => setEditForm({...editForm, email: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                     required
@@ -280,7 +249,7 @@ export default function DashboardPage() {
               </form>
             ) : (
               <button
-                onClick={() => handleEdit(user)}
+                onClick={() => { if (user) handleEdit(user as User); }}
                 className="mt-6 w-full bg-gradient-to-r from-violet-600 to-pink-600 text-white py-3 px-4 rounded-xl font-bold hover:from-violet-700 hover:to-pink-700 transition-all shadow-lg"
               >
                 Edit Profile
@@ -366,7 +335,7 @@ export default function DashboardPage() {
                   <label className="block text-sm font-bold text-gray-700 mb-2">Name</label>
                   <input
                     type="text"
-                    value={editForm.name}
+                    value={editForm.name || ''}
                     onChange={(e) => setEditForm({...editForm, name: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                     required
@@ -376,7 +345,7 @@ export default function DashboardPage() {
                   <label className="block text-sm font-bold text-gray-700 mb-2">Email</label>
                   <input
                     type="email"
-                    value={editForm.email}
+                    value={editForm.email || ''}
                     onChange={(e) => setEditForm({...editForm, email: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                     required
@@ -387,7 +356,7 @@ export default function DashboardPage() {
                     type="submit"
                     className="flex-1 bg-gradient-to-r from-violet-600 to-pink-600 text-white py-3 px-4 rounded-xl font-bold hover:from-violet-700 hover:to-pink-700 transition-all shadow-lg"
                   >
-                    Update User
+                    Update
                   </button>
                   <button
                     type="button"
